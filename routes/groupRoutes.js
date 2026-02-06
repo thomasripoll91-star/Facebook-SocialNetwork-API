@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Group = require('../models/Group');
+const auth = require('../middleware/auth');
 
 // 1. GET : Récupérer tous les groupes
 router.get('/', async (req, res) => {
@@ -24,7 +25,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // 3. POST : Créer un groupe
-router.post('/', async (req, res) => {
+router.post('/',auth, async (req, res) => {
     try {
         const newGroup = new Group(req.body);
         await newGroup.save();

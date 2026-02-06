@@ -1,61 +1,55 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-router.get('/', async (req, res) => {
-    try {
-        // Va chercher tous les utilisateurs dans MongoDB
-        const users = await User.find(); 
-        res.json(users);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Endpoint pour créer un utilisateur (Inscription)
+// INSCRIPTION (Avec hashage du mot de passe)
 router.post('/register', async (req, res) => {
     try {
         const { firstname, lastname, email, password } = req.body;
-        
-        // Facebook demande un email unique [cite: 47]
+
+        // Vérifier si l'email existe déjà
         const userExists = await User.findOne({ email });
-        if (userExists) {
-            return res.status(400).json({ message: "Cet email est déjà utilisé." });
-        }
+        if (userExists) return res.status(400).json({ message: "Email déjà utilisé" });
 
-        const newUser = new User({ firstname, lastname, email, password });
+        // HASHAGE : On crypte le mot de passe
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = new User({ 
+            firstname, 
+            lastname, 
+            email, 
+            password: hashedPassword // On enregistre le mot de passe crypté
+        });
+
         await newUser.save();
-        
-        res.status(201).json({ message: "Utilisateur créé avec succès !", user: newUser });
+        res.status(201).json({ message: "Utilisateur créé !" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-router.put('/:id', async (req, res) => {
+// LOGIN (C'est ici qu'on crée le TOKEN)
+router.post('/login', async (req, res) => {
     try {
-        // { new: true } permet de renvoyer l'utilisateur une fois modifié, pas l'ancien
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        
-        if (!updatedUser) {
-            return res.status(404).json({ message: "Utilisateur non trouvé" });
-        }
-        
-        res.json({ message: "Utilisateur mis à jour", user: updatedUser });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+        // 1. On cherche l'utilisateur
+        const user = await User.findOne({ email: req.body.email });
+        if (!user) return res.status(401).json({ message: "Utilisateur ou mot de passe incorrect" });
 
-router.delete('/:id', async (req, res) => {
-    try {
-        const deletedUser = await User.findByIdAndDelete(req.params.id);
+        // 2. On compare le mot de passe envoyé avec le hash en BDD
+        const valid = await bcrypt.compare(req.body.password, user.password);
+        if (!valid) return res.status(401).json({ message: "Utilisateur ou mot de passe incorrect" });
 
-        if (!deletedUser) {
-            return res.status(404).json({ message: "Utilisateur non trouvé" });
-        }
-
-        res.json({ message: "Utilisateur supprimé avec succès" });
+        // 3. On génère le TOKEN
+        res.status(200).json({
+            userId: user._id,
+            token: jwt.sign(
+                { userId: user._id },
+                'RANDOM_TOKEN_SECRET', // Clé secrète (à cacher en prod normalement)
+                { expiresIn: '24h' }
+            )
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
