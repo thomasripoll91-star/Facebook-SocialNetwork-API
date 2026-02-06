@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const groupController = require('../Controllers/groupController');
 
-// Route temporaire pour tester le lancement
-router.get('/', (req, res) => {
-    res.json({ message: "Route des groupes opérationnelle" });
-});
+// Routes obligatoires pour les groupes
+router.post('/', groupController.createGroup); // Créer un groupe
+router.get('/', groupController.getAllGroups); // Lister les groupes
 
 module.exports = router;

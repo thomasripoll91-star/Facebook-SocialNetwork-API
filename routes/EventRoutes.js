@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const Event = require('../models/Event');
+const eventController = require('../Controllers/eventController');
 
-// Création d'un événement (Étapes du cahier des charges)
-router.post('/', async (req, res) => {
-    try {
-        const { name, description, start_date, end_date, location, is_private } = req.body;
-        const newEvent = new Event({ name, description, start_date, end_date, location, is_private });
-        await newEvent.save();
-        res.status(201).json(newEvent);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
+// Route existante
+router.post('/', eventController.createEvent);
+
+// --- NOUVELLES ROUTES OBLIGATOIRES ---
+
+// Billetterie
+router.post('/tickets/type', eventController.addTicketType); // Définir un billet
+router.post('/tickets/buy', eventController.buyTicket);      // Acheter un billet
+
+// Sondages
+router.post('/polls', eventController.createPoll);           // Créer un sondage
+router.post('/polls/vote', eventController.voteInPoll);      // Voter
 
 module.exports = router;
