@@ -58,3 +58,7 @@ npm start
 # Mode développement
 npm run dev
 ```
+
+### 4. Lien vers la documentation API 
+
+https://documenter.getpostman.com/view/12901185/2sBXc8p43h

@@ -9,7 +9,7 @@ connectDB();
 
 // Définition des routes (Endpoints)
 app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/events', require('./routes/eventRoutes'));
+app.use('/api/events', require('./routes/EventRoutes'));
 app.use('/api/groups', require('./routes/groupRoutes'));
 
 const PORT = 3000;
